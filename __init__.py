@@ -2,7 +2,7 @@
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util.log import LOG
-import subprocess, re, uuid, time, pexpect
+import subprocess, re, uuid, pexpect
 
 
 class WrapperAircrackSkill(MycroftSkill):
