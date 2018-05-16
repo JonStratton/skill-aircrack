@@ -5,7 +5,7 @@ from mycroft.util.log import LOG
 import subprocess, re, uuid, pexpect
 
 
-class WrapperAircrackSkill(MycroftSkill):
+class AircrackSkill(MycroftSkill):
 
     def deauth_clients( self, address, interface ):
         cmd = 'sudo aireplay-ng -0 1 -a %s %s' % ( address, interface )
@@ -130,7 +130,7 @@ class WrapperAircrackSkill(MycroftSkill):
         return ', '.join( counted_list )
 
     def __init__(self):
-        super(WrapperAircrackSkill, self).__init__(name="WrapperAircrackSkill")
+        super(AircrackSkill, self).__init__(name="AircrackSkill")
         self.wordlist             = self.get_wordlist_path( 'rockyou.txt' ) # Or whatever
         self.available_interfaces = []
         self.selected_interface   = 'wlx60e32715d618' # TODO remove
@@ -231,4 +231,4 @@ class WrapperAircrackSkill(MycroftSkill):
            self.speak_dialog("no.password")
 
 def create_skill():
-    return WrapperAircrackSkill()
+    return AircrackSkill()
