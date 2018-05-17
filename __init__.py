@@ -1,4 +1,3 @@
-
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util.log import LOG
@@ -133,7 +132,7 @@ class AircrackSkill(MycroftSkill):
         super(AircrackSkill, self).__init__(name="AircrackSkill")
         self.wordlist             = self.get_wordlist_path( 'rockyou.txt' ) # Or whatever
         self.available_interfaces = []
-        self.selected_interface   = 'wlx60e32715d618' # TODO remove
+        self.selected_interface   = ''
         self.monitor_interface    = ''
         self.available_networks   = []
         self.selected_network     = ''
