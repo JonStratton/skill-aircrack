@@ -138,8 +138,8 @@ class AircrackSkill(MycroftSkill):
         self.selected_network     = ''
         self.pcap_file            = ''
 
-    def initialize(self):
-        self.available_interfaces = self.get_available_interfaces()
+    #def initialize(self):
+    #    self.available_interfaces = self.get_available_interfaces()
         
     @intent_handler(IntentBuilder("").require("List").require("Interface"))
     def handle_list_available_interfaces_intent(self, message):
