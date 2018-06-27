@@ -16,7 +16,7 @@ else
 fi
 
 # Probably need a password file
-if [ "$(locate rockyou.txt)" == "" ]; then
+if [ -z "$(locate rockyou.txt)" ]; then
    echo "rockyou.txt not found. Please find a copy and download it."
 fi
 
