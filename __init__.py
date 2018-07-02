@@ -15,10 +15,10 @@ class AircrackSkill(MycroftSkill):
     def start_dump( self, interface, network):
         file_base = '/tmp/airodump_%s' % ( uuid.uuid4() ) 
         file_pcap = ''
-        cmd = 'sudo airodump-ng %s --bssid %s --channel %s --output-format pcap --write %s -u 2' % ( interface, network.get( 'Address', '' ), network.get('Channel', ''), file_base )
-        LOG.info( 'Executing: %s' % ( cmd ) )
-        p = pexpect.spawn( cmd, timeout=10000 )
         try:
+           cmd = 'sudo airodump-ng %s --bssid %s --channel %s --output-format pcap --write %s -u 2' % ( interface, network.get( 'Address', '' ), network.get('Channel', ''), file_base )
+           LOG.info( 'Executing: %s' % ( cmd ) )
+           p = pexpect.spawn( cmd, timeout=10000 )
            p.expect( 'handshake' )
            p.sendcontrol('c');
            file_pcap = '%s-01.cap' % ( file_base )
@@ -141,7 +141,7 @@ class AircrackSkill(MycroftSkill):
     #def initialize(self):
     #    self.available_interfaces = self.get_available_interfaces()
         
-    @intent_handler(IntentBuilder("").require("List").require("Interface"))
+    @intent_handler(IntentBuilder("ListInterface").require("List").require("Interface"))
     def handle_list_available_interfaces_intent(self, message):
         # refresh in case we forgot plug it in
         self.available_interfaces = self.get_available_interfaces()
@@ -150,7 +150,7 @@ class AircrackSkill(MycroftSkill):
         else:
             self.speak_dialog("no.interfaces")
 
-    @intent_handler(IntentBuilder("").require("List").require("Network").optionally("Named"))
+    @intent_handler(IntentBuilder("ListNetwork").require("List").require("Network").optionally("Named"))
     def handle_list_available_networks_intent(self, message):
         network_name = ''
         if message.data.get("Named"):
@@ -166,7 +166,7 @@ class AircrackSkill(MycroftSkill):
             self.speak_dialog("select.interface.first")
 
     # Select from a list of interfaces. If it looks like a monitor interface, set that too.
-    @intent_handler(IntentBuilder("").require("Select").require("Interface").require("Number"))
+    @intent_handler(IntentBuilder("SelectInterface").require("Select").require("Interface").require("Number"))
     def handle_select_interface_intent(self, message):
         interface_number = 0
         try:
@@ -181,21 +181,21 @@ class AircrackSkill(MycroftSkill):
             self.speak_dialog("no.such.interface")
 
     # Select from a list of networks
-    @intent_handler(IntentBuilder("").require("Select").require("Network").require("Number"))
+    @intent_handler(IntentBuilder("SelectNetwork").require("Select").require("Network").require("Number"))
     def handle_select_network_intent(self, message):
         network_number = 0
         try:
            network_number = int( message.data.get("Number") )
         except:
            pass
-        if network_number <= len( self.available_networks ):
+        if self.available_networks and network_number <= len( self.available_networks ):
             self.selected_network = self.available_networks[network_number]
             self.speak_dialog("selected.network", data={'selected_network':self.selected_network.get( 'ESSID', '' )})
         else:
             self.speak_dialog("no.such.network")
 
     # Start the interface in monitor mode, and start dumping until a handshake is captured.
-    @intent_handler(IntentBuilder("").require("Start").require("Monitor"))
+    @intent_handler(IntentBuilder("StartMonitor").require("Start").require("Monitor"))
     def handle_start_monitor_intent(self, message):
         # Dont bother starting an interface we already started
         if not self.monitor_interface:
@@ -209,19 +209,19 @@ class AircrackSkill(MycroftSkill):
            self.speak_dialog("monitor.stopped.early")
 
     # Stops the monitor interface. This should also stop any dumping going on
-    @intent_handler(IntentBuilder("").require("Stop").require("Monitor"))
+    @intent_handler(IntentBuilder("StopMonitor").require("Stop").require("Monitor"))
     def handle_stop_monitor_intent(self, message):
         self.stop_interface( self.monitor_interface )
         self.speak_dialog("stop.monitor")
 
     # Stops the monitor interface. This should also stop any dumping going on
-    @intent_handler(IntentBuilder("").require("Deauth").require("Clients"))
+    @intent_handler(IntentBuilder("DeauthClients").require("Deauth").require("Clients"))
     def handle_deauth_clients_intent(self, message):
         self.speak_dialog("deauthing.clients", data={'selected_network':self.selected_network.get( 'ESSID', '' )})
         self.deauth_clients( self.selected_network.get( 'Address', '' ), self.monitor_interface )
 
     # Stops the monitor interface. This should also stop any dumping going on
-    @intent_handler(IntentBuilder("").require("Crack").require("Password"))
+    @intent_handler(IntentBuilder("CrackPassword").require("Crack").require("Password"))
     def handle_crack_password_intent(self, message):
         password = self.start_crack( self.pcap_file, self.wordlist )
         if password:
