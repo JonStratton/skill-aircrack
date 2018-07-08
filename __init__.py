@@ -32,7 +32,7 @@ class AircrackSkill(MycroftSkill):
         LOG.info( 'Executing: %s' % ( cmd ) )
         p = subprocess.Popen( cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
         for line in p.stdout.readlines():
-           wordlist_path = line.rstrip()
+           wordlist_path = line.decode('utf-8').rstrip()
         return wordlist_path
 
     def start_crack( self, cap_file, wordlist):
@@ -43,7 +43,7 @@ class AircrackSkill(MycroftSkill):
         try:
            # KEY FOUND! [ Password123 ]
            p.expect( '\[ .* \]' )
-           password = p.after
+           password = p.after.decode('utf-8')
         except:
            pass
         return password
@@ -55,7 +55,7 @@ class AircrackSkill(MycroftSkill):
         p = pexpect.spawn( cmd, timeout=10000 )
         try:
            p.expect( 'mac80211 monitor mode vif enabled on \[.*\].*' )
-           split_string = p.after.rstrip().split(']')
+           split_string = p.after.decode('utf-8').rstrip().split(']')
            new_device = split_string[1]
         except:
            pass
@@ -73,11 +73,11 @@ class AircrackSkill(MycroftSkill):
         LOG.info( 'Executing: %s' % ( cmd ) )
         p = subprocess.Popen( cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
         for line in p.stdout.readlines():
+            split_line = re.split( r'\t+', line.decode('utf-8') )
             try:
-               split_line = re.split( r'\t+', line )
                if split_line[1] != 'Interface':
                   if_list.append( split_line[1] )
-            except:
+            except IndexError:
                pass
         retval = p.wait
         return if_list
@@ -99,7 +99,7 @@ class AircrackSkill(MycroftSkill):
         LOG.info( 'Executing: %s' % ( cmd ) )
         p = subprocess.Popen( cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
         for line in p.stdout.readlines():
-           split_line = line.rstrip().split(':')
+           split_line = line.decode('utf-8').rstrip().split(':')
            key = split_line[0]
            value = re.sub(r'^"|"$', '', ':'.join( split_line[1:] ).strip() )
            if key.endswith('Address'): # New record found
@@ -202,7 +202,7 @@ class AircrackSkill(MycroftSkill):
            self.monitor_interface = self.start_interface( self.selected_interface )
         self.speak_dialog("start.monitor")
         self.pcap_file = self.start_dump( self.monitor_interface, self.selected_network )
-        self.stop_interface( self.monitor_interface )
+        #self.stop_interface( self.monitor_interface )
         if self.pcap_file:
            self.speak_dialog("captured.handshake")
         else:
