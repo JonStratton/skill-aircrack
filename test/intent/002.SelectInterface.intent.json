@@ -1,5 +1,0 @@
-{
-	"utterance": "List network devices",
-	"intent_type": "ListNetwork",
-	"expected_response": "No such Interface found."
-}

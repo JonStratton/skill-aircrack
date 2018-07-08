@@ -73,11 +73,11 @@ class AircrackSkill(MycroftSkill):
         LOG.info( 'Executing: %s' % ( cmd ) )
         p = subprocess.Popen( cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
         for line in p.stdout.readlines():
-            split_line = re.split( r'\t+', line )
             try:
+               split_line = re.split( r'\t+', line )
                if split_line[1] != 'Interface':
                   if_list.append( split_line[1] )
-            except IndexError:
+            except:
                pass
         retval = p.wait
         return if_list
