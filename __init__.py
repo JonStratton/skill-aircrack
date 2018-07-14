@@ -149,15 +149,18 @@ class AircrackSkill(MycroftSkill):
         super(AircrackSkill, self).__init__(name="AircrackSkill")
         self.wordlist             = self.get_wordlist_path( 'rockyou.txt' ) # Or whatever
         self.available_interfaces = []
-        self.selected_interface   = ''
         self.monitor_interface    = ''
         self.available_networks   = []
         self.selected_network     = ''
         self.pcap_file            = ''
 
-    #def initialize(self):
-    #    self.available_interfaces = self.get_available_interfaces()
-        
+    def __del__(self):
+        LOG.info( 'Goodbye world' )
+        if self.monitor_interface:
+            self.stop_interface( self.monitor_interface )
+        if self.pcap_file:
+            os.unlink(self.pcap_file)
+
     @intent_handler(IntentBuilder("ListInterface").require("List").require("Interface"))
     def handle_list_available_interfaces_intent(self, message):
         # refresh in case we forgot plug it in
@@ -173,8 +176,8 @@ class AircrackSkill(MycroftSkill):
         if message.data.get("Named"):
            network_name = str( message.data.get("Named") )
         LOG.info( 'Network Name: %s' % ( network_name ) )
-        if self.selected_interface:
-            self.available_networks = self.get_available_networks( self.selected_interface, network_name );
+        if self.settings.get('selected_interface') != 'None':
+            self.available_networks = self.get_available_networks( self.settings.get('selected_interface'), network_name );
             if len( self.available_networks ):
                 self.speak_dialog("networks.are", data={'available_networks':self.list_to_string( self.get_essid_list( self.available_networks ) )})
             else:
@@ -192,8 +195,8 @@ class AircrackSkill(MycroftSkill):
            pass
 
         if interface_number <= len( self.available_interfaces ):
-            self.selected_interface = self.available_interfaces[interface_number]
-            self.speak_dialog("selected.interface", data={'selected_interface':self.selected_interface})
+            self.settings['selected_interface'] = self.available_interfaces[interface_number]
+            self.speak_dialog("selected.interface", data={'selected_interface':self.settings.get('selected_interface')})
         else:
             self.speak_dialog("no.such.interface")
 
@@ -216,10 +219,9 @@ class AircrackSkill(MycroftSkill):
     def handle_start_monitor_intent(self, message):
         # Dont bother starting an interface we already started
         if not self.monitor_interface:
-           self.monitor_interface = self.start_interface( self.selected_interface )
+           self.monitor_interface = self.start_interface( self.settings.get('selected_interface') )
         self.speak_dialog("start.monitor")
         self.pcap_file = self.start_dump( self.monitor_interface, self.selected_network )
-        #self.stop_interface( self.monitor_interface )
         if self.pcap_file:
            self.speak_dialog("captured.handshake")
         else:
