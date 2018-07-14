@@ -1,7 +1,7 @@
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util.log import LOG
-import subprocess, re, uuid, pexpect, tempfile
+import subprocess, re, uuid, pexpect, tempfile, os, sys
 # https://github.com/JonStratton/skill-aircrack
 # Just enough of a wrapper around some system commands to allow aircrack to crack wifi passwords. Basically
 # 1. Choose an interface
