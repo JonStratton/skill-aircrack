@@ -7,6 +7,9 @@ A simple wrapper so Aircrack-ng can be used with Mycroft.
 * "List wireless networks."
 * "Select network number three."
 * "Start Monitor."
+* "Disconnect Clients."
+* "Crack Password."
+* "Stop Monitor."
 
 ## Credits 
 Jon Stratton

