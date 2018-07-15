@@ -1,0 +1,1 @@
+SecLists/Passwords/WiFi-WPA/probable-v2-wpa-top4800.txt
