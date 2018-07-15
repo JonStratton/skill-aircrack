@@ -176,7 +176,7 @@ class AircrackSkill(MycroftSkill):
         if message.data.get("Named"):
            network_name = str( message.data.get("Named") )
         LOG.info( 'Network Name: %s' % ( network_name ) )
-        if self.settings.get('selected_interface') != 'None':
+        if self.settings.get('selected_interface') and self.settings.get('selected_interface') != 'None':
             self.available_networks = self.get_available_networks( self.settings.get('selected_interface'), network_name );
             if len( self.available_networks ):
                 self.speak_dialog("networks.are", data={'available_networks':self.list_to_string( self.get_essid_list( self.available_networks ) )})
