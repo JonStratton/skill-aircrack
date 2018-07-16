@@ -34,16 +34,6 @@ class AircrackSkill(MycroftSkill):
            pass
         return file_pcap
 
-    # Takes runs locate on a file to get the full path
-    def get_wordlist_path( self, wordlist_file ):
-        wordlist_path = ''
-        cmd = 'locate %s' % wordlist_file
-        LOG.info( 'Executing: %s' % ( cmd ) )
-        p = subprocess.Popen( cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
-        for line in p.stdout.readlines():
-           wordlist_path = line.decode('utf-8').rstrip()
-        return wordlist_path
-
     # After an auth has been captured, try to crack it with the worklist.
     def start_crack( self, cap_file, wordlist):
         password = ''
@@ -147,15 +137,16 @@ class AircrackSkill(MycroftSkill):
 
     def __init__(self):
         super(AircrackSkill, self).__init__(name="AircrackSkill")
-        self.wordlist             = self.get_wordlist_path( 'rockyou.txt' ) # Or whatever
         self.available_interfaces = []
         self.monitor_interface    = ''
         self.available_networks   = []
         self.selected_network     = ''
         self.pcap_file            = ''
+        if ( not self.settings.get('wordlist') ) or self.settings.get('selected_interface') == 'None':
+            self.settings['wordlist'] = '%s/probable-v2-wpa-top4800.txt' % ( os.path.dirname(os.path.realpath(__file__)) )
 
     def __del__(self):
-        LOG.info( 'Goodbye world' )
+        LOG.info( 'skill-aircrack: attempting to cleanup.' )
         if self.monitor_interface:
             self.stop_interface( self.monitor_interface )
         if self.pcap_file:
@@ -242,7 +233,7 @@ class AircrackSkill(MycroftSkill):
     # Stops the monitor interface. This should also stop any dumping going on
     @intent_handler(IntentBuilder("CrackPassword").require("Crack").require("Password"))
     def handle_crack_password_intent(self, message):
-        password = self.start_crack( self.pcap_file, self.wordlist )
+        password = self.start_crack( self.pcap_file, self.settings.get('wordlist') )
         if password:
            self.speak_dialog("recovered.password", data={'password':password})
         else:

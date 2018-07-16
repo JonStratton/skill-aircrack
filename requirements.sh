@@ -5,19 +5,11 @@
 # Base commands
 dist="$(lsb_release -is)"
 if [[ "$dist" =~ "SUSE" ]]; then 
-   sudo zypper install locate
    sudo zypper install aircrack-ng
 elif [[ "$dist" =~ "Fedora" ]]; then 
-   sudo yum install locate
    sudo yum install aircrack-ng
 else 
-   sudo apt-get install locate
    sudo apt-get install aircrack-ng
-fi
-
-# Probably need a password file
-if [ -z "$(locate rockyou.txt)" ]; then
-   echo "rockyou.txt not found. Please find a copy and download it."
 fi
 
 # Can we sudo our commands?
