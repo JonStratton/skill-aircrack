@@ -1,5 +1,5 @@
 ## Skill Wrapper Aircrack
-A simple wrapper so Aircrack-ng can be used with Mycroft.
+A simple Mycroft wrapper for a small subset of Aircrack-ng. Basically, it can list networks and interfaces, bring interfaces up in monitor mode, deauth clients, and crack WPA2 passwords.
 
 ## Examples 
 * "List interfaces."
