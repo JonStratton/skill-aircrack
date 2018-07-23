@@ -1,5 +1,5 @@
 {
 	"utterance": "Start Monitor",
 	"intent_type": "StartMonitor",
-	"expected_response": "Monitor stopped before handshake captured."
+	"responses": ["Monitor stopped before handshake captured.", "Error, I cannot seem to sudo the aircrack commands without a password. Please see github.com/JonStratton/skill-aircrack for notes on sudo access."]
 }

@@ -135,6 +135,18 @@ class AircrackSkill(MycroftSkill):
            counter = counter + 1
         return ', '.join( counted_list )
 
+    # Checks to see if we can sudo needed commands
+    def cannot_passwordless_sudo( self, commands ):
+        error_commands = []
+        cmd = 'sudo -l'
+        LOG.info( 'Executing: %s' % ( cmd ) )
+        sudo_l = subprocess.run( cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+        for command in commands:
+            command_regex = re.compile( 'NOPASSWD: .*%s' % command )
+            if not command_regex.search( sudo_l.stdout.decode('utf-8') ):
+                error_commands.append( command )
+        return error_commands
+
     def __init__(self):
         super(AircrackSkill, self).__init__(name="AircrackSkill")
         self.available_interfaces = []
@@ -142,6 +154,7 @@ class AircrackSkill(MycroftSkill):
         self.available_networks   = []
         self.selected_network     = ''
         self.pcap_file            = ''
+        self.cannot_sudo_commands = self.cannot_passwordless_sudo( ['aireplay-ng', 'airodump-ng', 'airmon-ng', 'iwlist'] )
         if ( not self.settings.get('wordlist') ) or self.settings.get('selected_interface') == 'None':
             self.settings['wordlist'] = '%s/probable-v2-wpa-top4800.txt' % ( os.path.dirname(os.path.realpath(__file__)) )
 
@@ -154,81 +167,102 @@ class AircrackSkill(MycroftSkill):
 
     @intent_handler(IntentBuilder("ListInterface").require("List").require("Interface"))
     def handle_list_available_interfaces_intent(self, message):
-        # refresh in case we forgot plug it in
-        self.available_interfaces = self.get_available_interfaces()
-        if len( self.available_interfaces ):
-            self.speak_dialog("interfaces.are", data={'available_interfaces':self.list_to_string( self.available_interfaces )})
+        if self.cannot_sudo_commands:
+            self.speak_dialog("cannot.sudo")
         else:
-            self.speak_dialog("no.interfaces")
+            # refresh in case we forgot plug it in
+            self.available_interfaces = self.get_available_interfaces()
+            if len( self.available_interfaces ):
+                self.speak_dialog("interfaces.are", data={'available_interfaces':self.list_to_string( self.available_interfaces )})
+            else:
+                self.speak_dialog("no.interfaces")
 
     @intent_handler(IntentBuilder("ListNetwork").require("List").require("Network").optionally("Named"))
     def handle_list_available_networks_intent(self, message):
-        network_name = ''
-        if message.data.get("Named"):
-           network_name = str( message.data.get("Named") )
-        LOG.info( 'Network Name: %s' % ( network_name ) )
-        if self.settings.get('selected_interface') and self.settings.get('selected_interface') != 'None':
-            self.available_networks = self.get_available_networks( self.settings.get('selected_interface'), network_name );
-            if len( self.available_networks ):
-                self.speak_dialog("networks.are", data={'available_networks':self.list_to_string( self.get_essid_list( self.available_networks ) )})
-            else:
-                self.speak_dialog("no.networks")
+        if self.cannot_sudo_commands:
+            self.speak_dialog("cannot.sudo")
         else:
-            self.speak_dialog("select.interface.first")
+            network_name = ''
+            if message.data.get("Named"):
+               network_name = str( message.data.get("Named") )
+            LOG.info( 'Network Name: %s' % ( network_name ) )
+            if self.settings.get('selected_interface') and self.settings.get('selected_interface') != 'None':
+                self.available_networks = self.get_available_networks( self.settings.get('selected_interface'), network_name );
+                if len( self.available_networks ):
+                    self.speak_dialog("networks.are", data={'available_networks':self.list_to_string( self.get_essid_list( self.available_networks ) )})
+                else:
+                    self.speak_dialog("no.networks")
+            else:
+                self.speak_dialog("select.interface.first")
 
     # Select from a list of interfaces. If it looks like a monitor interface, set that too.
     @intent_handler(IntentBuilder("SelectInterface").require("Select").require("Interface").require("Number"))
     def handle_select_interface_intent(self, message):
-        interface_number = 0
-        try:
-           interface_number = int( message.data.get("Number") )
-        except:
-           pass
-
-        if interface_number <= len( self.available_interfaces ):
-            self.settings['selected_interface'] = self.available_interfaces[interface_number]
-            self.speak_dialog("selected.interface", data={'selected_interface':self.settings.get('selected_interface')})
+        if self.cannot_sudo_commands:
+            self.speak_dialog("cannot.sudo")
         else:
-            self.speak_dialog("no.such.interface")
+            interface_number = 0
+            try:
+               interface_number = int( message.data.get("Number") )
+            except:
+               pass
+
+            if interface_number <= len( self.available_interfaces ):
+                self.settings['selected_interface'] = self.available_interfaces[interface_number]
+                self.speak_dialog("selected.interface", data={'selected_interface':self.settings.get('selected_interface')})
+            else:
+                self.speak_dialog("no.such.interface")
 
     # Select from a list of networks
     @intent_handler(IntentBuilder("SelectNetwork").require("Select").require("Network").require("Number"))
     def handle_select_network_intent(self, message):
-        network_number = 0
-        try:
-           network_number = int( message.data.get("Number") )
-        except:
-           pass
-        if self.available_networks and network_number <= len( self.available_networks ):
-            self.selected_network = self.available_networks[network_number]
-            self.speak_dialog("selected.network", data={'selected_network':self.selected_network.get( 'ESSID', '' )})
+        if self.cannot_sudo_commands:
+            self.speak_dialog("cannot.sudo")
         else:
-            self.speak_dialog("no.such.network")
+            network_number = 0
+            try:
+                network_number = int( message.data.get("Number") )
+            except:
+                pass
+            if self.available_networks and network_number <= len( self.available_networks ):
+                self.selected_network = self.available_networks[network_number]
+                self.speak_dialog("selected.network", data={'selected_network':self.selected_network.get( 'ESSID', '' )})
+            else:
+                self.speak_dialog("no.such.network")
 
     # Start the interface in monitor mode, and start dumping until a handshake is captured.
     @intent_handler(IntentBuilder("StartMonitor").require("Start").require("Monitor"))
     def handle_start_monitor_intent(self, message):
-        # Dont bother starting an interface we already started
-        if not self.monitor_interface:
-           self.monitor_interface = self.start_interface( self.settings.get('selected_interface') )
-        self.speak_dialog("start.monitor")
-        self.pcap_file = self.start_dump( self.monitor_interface, self.selected_network )
-        if self.pcap_file:
-           self.speak_dialog("captured.handshake")
+        if self.cannot_sudo_commands:
+            self.speak_dialog("cannot.sudo")
         else:
-           self.speak_dialog("monitor.stopped.early")
+            # Dont bother starting an interface we already started
+            if not self.monitor_interface:
+               self.monitor_interface = self.start_interface( self.settings.get('selected_interface') )
+            self.speak_dialog("start.monitor")
+            self.pcap_file = self.start_dump( self.monitor_interface, self.selected_network )
+            if self.pcap_file:
+               self.speak_dialog("captured.handshake")
+            else:
+               self.speak_dialog("monitor.stopped.early")
 
     # Stops the monitor interface. This should also stop any dumping going on
     @intent_handler(IntentBuilder("StopMonitor").require("Stop").require("Monitor"))
     def handle_stop_monitor_intent(self, message):
-        self.stop_interface( self.monitor_interface )
-        self.speak_dialog("stop.monitor")
+        if self.cannot_sudo_commands:
+            self.speak_dialog("cannot.sudo")
+        else:
+            self.stop_interface( self.monitor_interface )
+            self.speak_dialog("stop.monitor")
 
     # Stops the monitor interface. This should also stop any dumping going on
     @intent_handler(IntentBuilder("DeauthClients").require("Deauth").require("Clients"))
     def handle_deauth_clients_intent(self, message):
-        self.speak_dialog("deauthing.clients", data={'selected_network':self.selected_network.get( 'ESSID', '' )})
-        self.deauth_clients( self.selected_network.get( 'Address', '' ), self.monitor_interface )
+        if self.cannot_sudo_commands:
+            self.speak_dialog("cannot.sudo")
+        else:
+            self.speak_dialog("deauthing.clients", data={'selected_network':self.selected_network.get( 'ESSID', '' )})
+            self.deauth_clients( self.selected_network.get( 'Address', '' ), self.monitor_interface )
 
     # Stops the monitor interface. This should also stop any dumping going on
     @intent_handler(IntentBuilder("CrackPassword").require("Crack").require("Password"))

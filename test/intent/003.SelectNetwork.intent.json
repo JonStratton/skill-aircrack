@@ -1,5 +1,5 @@
 {
 	"utterance": "Select Network Number 99",
 	"intent_type": "SelectNetwork",
-	"expected_response": "No such network found."
+	"responses": ["No such network found.", "Error, I cannot seem to sudo the aircrack commands without a password. Please see github.com/JonStratton/skill-aircrack for notes on sudo access."]
 }

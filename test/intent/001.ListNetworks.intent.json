@@ -1,5 +1,5 @@
 {
 	"utterance": "List networks Named 9999999",
 	"intent_type": "ListNetwork",
-	"responses": ["Please select Interface first.", "There are no available networks"]
+	"responses": ["Please select Interface first.", "There are no available networks", "Error, I cannot seem to sudo the aircrack commands without a password. Please see github.com/JonStratton/skill-aircrack for notes on sudo access."]
 }
