@@ -147,6 +147,9 @@ class AircrackSkill(MycroftSkill):
                 error_commands.append( command )
         return error_commands
 
+    def get_intro_message(self):
+        return( 'This tool is intended to test your own wireless networks, in a fun way, for bad wpa2 passwords. Accessing wireless networks without permission is, and should be, a crime. As is cracking passwords. The user of this software is responsible for its use. Please don’t be a bad person.' )
+
     def __init__(self):
         super(AircrackSkill, self).__init__(name="AircrackSkill")
         self.available_interfaces = []

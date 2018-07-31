@@ -1,3 +1,8 @@
+## Disclaimer
+This tool is intended to test your own wireless networks, in a fun way, for bad wpa2 passwords.
+
+Accessing wireless networks without permission is, and should be, a crime. As is cracking passwords. The user of this software is responsible for it’s use. Please don’t be a bad person.
+
 ## Skill Wrapper Aircrack
 A simple Mycroft wrapper for a small subset of Aircrack-ng. Basically, it can list networks and interfaces, bring interfaces up in monitor mode, deauth clients, and crack WPA2 passwords.
 
