@@ -147,6 +147,9 @@ class AircrackSkill(MycroftSkill):
                 error_commands.append( command )
         return error_commands
 
+    def stop(self):
+        pass
+
     def get_intro_message(self):
         return( 'This tool is intended to test your own wireless networks, in a fun way, for bad wpa2 passwords. Accessing wireless networks without permission is, and should be, a crime. As is cracking passwords. The user of this software is responsible for its use. Please don’t be a bad person.' )
 
@@ -270,11 +273,15 @@ class AircrackSkill(MycroftSkill):
     # Stops the monitor interface. This should also stop any dumping going on
     @intent_handler(IntentBuilder("CrackPassword").require("Crack").require("Password"))
     def handle_crack_password_intent(self, message):
-        password = self.start_crack( self.pcap_file, self.settings.get('wordlist') )
-        if password:
-           self.speak_dialog("recovered.password", data={'password':password})
-        else:
-           self.speak_dialog("no.password")
+        resp = self.get_response('confirm.permission')
+        yes_words = self.translate_list('yes')
+        # if (resp and any(i.strip() in resp for i in yes_words)):
+        if any(word in resp.split() for word in yes_words):
+           password = self.start_crack( self.pcap_file, self.settings.get('wordlist') )
+           if password:
+              self.speak_dialog("recovered.password", data={'password':password})
+           else:
+              self.speak_dialog("no.password")
 
 def create_skill():
     return AircrackSkill()
