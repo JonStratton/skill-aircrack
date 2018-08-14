@@ -225,16 +225,19 @@ class AircrackSkill(MycroftSkill):
         if self.cannot_sudo_commands:
             self.speak_dialog("cannot.sudo")
         else:
-            network_number = 0
-            try:
-                network_number = int( message.data.get("Number") )
-            except:
-                pass
-            if self.available_networks and network_number <= len( self.available_networks ):
-                self.selected_network = self.available_networks[network_number]
-                self.speak_dialog("selected.network", data={'selected_network':self.selected_network.get( 'ESSID', '' )})
-            else:
-                self.speak_dialog("no.such.network")
+            resp = self.get_response('confirm.permission')
+            yes_words = self.translate_list('yes')
+            if any(word in resp.split() for word in yes_words):
+                network_number = 0
+                try:
+                    network_number = int( message.data.get("Number") )
+                except:
+                    pass
+                if self.available_networks and network_number <= len( self.available_networks ):
+                    self.selected_network = self.available_networks[network_number]
+                    self.speak_dialog("selected.network", data={'selected_network':self.selected_network.get( 'ESSID', '' )})
+                else:
+                    self.speak_dialog("no.such.network")
 
     # Start the interface in monitor mode, and start dumping until a handshake is captured.
     @intent_handler(IntentBuilder("StartMonitor").require("Start").require("Monitor"))
@@ -273,15 +276,11 @@ class AircrackSkill(MycroftSkill):
     # Stops the monitor interface. This should also stop any dumping going on
     @intent_handler(IntentBuilder("CrackPassword").require("Crack").require("Password"))
     def handle_crack_password_intent(self, message):
-        resp = self.get_response('confirm.permission')
-        yes_words = self.translate_list('yes')
-        # if (resp and any(i.strip() in resp for i in yes_words)):
-        if any(word in resp.split() for word in yes_words):
-           password = self.start_crack( self.pcap_file, self.settings.get('wordlist') )
-           if password:
-              self.speak_dialog("recovered.password", data={'password':password})
-           else:
-              self.speak_dialog("no.password")
+       password = self.start_crack( self.pcap_file, self.settings.get('wordlist') )
+       if password:
+          self.speak_dialog("recovered.password", data={'password':password})
+       else:
+          self.speak_dialog("no.password")
 
 def create_skill():
     return AircrackSkill()
