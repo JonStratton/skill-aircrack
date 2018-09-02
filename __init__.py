@@ -55,9 +55,9 @@ class AircrackSkill(MycroftSkill):
         LOG.info( 'Executing: %s' % ( cmd ) )
         p = pexpect.spawn( cmd, timeout=10000 )
         try:
-           p.expect( 'mac80211 monitor mode vif enabled on \[.*\].*' )
+           p.expect( 'mac80211 monitor mode vif enabled.* on \[.*\].*' )
            split_string = p.after.decode('utf-8').rstrip().split(']')
-           new_device = split_string[1]
+           new_device = split_string[-1].rstrip(')')
         except:
            pass
         return new_device
