@@ -131,7 +131,7 @@ class AircrackSkill(MycroftSkill):
         counted_list = []
         counter      = 0
         for item in list_to_string:
-           counted_list.append( '%d: %s' % ( counter, item ) )
+           counted_list.append( '%d, %s' % ( counter, item ) )
            counter = counter + 1
         return ', '.join( counted_list )
 
