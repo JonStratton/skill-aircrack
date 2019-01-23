@@ -19,20 +19,24 @@ class AircrackSkill(MycroftSkill):
         code = subprocess.call( cmd, shell=True, stdout=None, stderr=None )
         return code
 
-    # Start dumping the network traffic
-    def start_dump( self, interface, network):
+    # Attempt generate the base file name, and attempt to guess the pcap file name
+    def get_pcap_filename( self ):
         file_base = '%s/airodump_%s' % ( tempfile.gettempdir(), uuid.uuid4() )
-        file_pcap = ''
+        file_pcap = '%s-01.cap' % ( file_base )
+        return { 'base': file_base, 'pcap': file_pcap }
+
+    # Start dumping the network traffic
+    def start_dump( self, interface, network, file_base ):
+        success = True
         try:
            cmd = 'sudo airodump-ng %s --bssid %s --channel %s --output-format pcap --write %s -u 2' % ( interface, network.get( 'Address', '' ), network.get('Channel', ''), file_base )
            LOG.info( 'Executing: %s' % ( cmd ) )
            p = pexpect.spawn( cmd, timeout=10000 )
            p.expect( 'handshake' )
            p.sendcontrol('c');
-           file_pcap = '%s-01.cap' % ( file_base )
         except: # Probably a timeout
-           pass
-        return file_pcap
+           success = False
+        return success
 
     # After an auth has been captured, try to crack it with the worklist.
     def start_crack( self, cap_file, wordlist):
@@ -164,7 +168,7 @@ class AircrackSkill(MycroftSkill):
         if ( not self.settings.get('wordlist') ) or self.settings.get('selected_interface') == 'None':
             self.settings['wordlist'] = '%s/probable-v2-wpa-top4800.txt' % ( os.path.dirname(os.path.realpath(__file__)) )
 
-    def __del__(self):
+    def shutdown(self):
         LOG.info( 'skill-aircrack: attempting to cleanup.' )
         if self.monitor_interface:
             self.stop_interface( self.monitor_interface )
@@ -249,8 +253,10 @@ class AircrackSkill(MycroftSkill):
             if not self.monitor_interface:
                self.monitor_interface = self.start_interface( self.settings.get('selected_interface') )
             self.speak_dialog("start.monitor")
-            self.pcap_file = self.start_dump( self.monitor_interface, self.selected_network )
-            if self.pcap_file:
+            filename_result = self.get_pcap_filename()
+            self.pcap_file  = filename_result['pcap']
+            success = self.start_dump( self.monitor_interface, self.selected_network, filename_result['base'] )
+            if success:
                self.speak_dialog("captured.handshake")
             else:
                self.speak_dialog("monitor.stopped.early")
