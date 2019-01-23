@@ -151,6 +151,13 @@ class AircrackSkill(MycroftSkill):
                 error_commands.append( command )
         return error_commands
 
+    def cleanup( self, monitor_interface, pcap_file ):
+        LOG.info( 'skill-aircrack: attempting to cleanup.' )
+        if monitor_interface:
+            self.stop_interface( monitor_interface )
+        if pcap_file:
+            os.unlink(pcap_file)
+
     def stop(self):
         pass
 
@@ -168,12 +175,11 @@ class AircrackSkill(MycroftSkill):
         if ( not self.settings.get('wordlist') ) or self.settings.get('selected_interface') == 'None':
             self.settings['wordlist'] = '%s/probable-v2-wpa-top4800.txt' % ( os.path.dirname(os.path.realpath(__file__)) )
 
+    def __del__(self):
+        self.cleanup( self.monitor_interface, self.pcap_file )
+
     def shutdown(self):
-        LOG.info( 'skill-aircrack: attempting to cleanup.' )
-        if self.monitor_interface:
-            self.stop_interface( self.monitor_interface )
-        if self.pcap_file:
-            os.unlink(self.pcap_file)
+        self.cleanup( self.monitor_interface, self.pcap_file )
 
     @intent_handler(IntentBuilder("ListInterface").require("List").require("Interface"))
     def handle_list_available_interfaces_intent(self, message):
