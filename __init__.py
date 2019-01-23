@@ -155,7 +155,7 @@ class AircrackSkill(MycroftSkill):
         LOG.info( 'skill-aircrack: attempting to cleanup.' )
         if monitor_interface:
             self.stop_interface( monitor_interface )
-        if pcap_file:
+        if pcap_file and os.path.isfile(pcap_file):
             os.unlink(pcap_file)
 
     def stop(self):
