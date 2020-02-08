@@ -1,0 +1,2 @@
+(namn) (?P<Named>.*)
+(namngiven) (?P<Named>.*)

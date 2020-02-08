@@ -1,0 +1,2 @@
+(nome) (?P<Named>.*)
+(nomeado) (?P<Named>.*)

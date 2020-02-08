@@ -1,2 +1,2 @@
 (naam) (?P<Named>.*)
-(naam) (?P<Named>.*)
+(genaamd) (?P<Named>.*)
